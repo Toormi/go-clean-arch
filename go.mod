@@ -1,4 +1,4 @@
-module github.com/bxcodec/go-clean-arch
+module github.com/toormi/go-clean-arch
 
 go 1.20
 
