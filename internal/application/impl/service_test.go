@@ -3,10 +3,10 @@ package impl_test
 import (
 	"context"
 	"errors"
-	"github.com/bxcodec/go-clean-arch/domain/entity"
+	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
+	"github.com/bxcodec/go-clean-arch/domain/repository/mocks"
 	"github.com/bxcodec/go-clean-arch/internal"
 	"github.com/bxcodec/go-clean-arch/internal/application/impl"
-	mocks2 "github.com/bxcodec/go-clean-arch/internal/application/mocks"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestFetchArticle(t *testing.T) {
-	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticleRepo := new(mocks.ArticleRepository)
 	mockArticle := entity.Article{
 		Title:   "Hello",
 		Content: "Content",
@@ -30,7 +30,7 @@ func TestFetchArticle(t *testing.T) {
 			ID:   1,
 			Name: "Iman Tumorang",
 		}
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		mockAuthorrepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockAuthor, nil)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 		num := int64(1)
@@ -50,7 +50,7 @@ func TestFetchArticle(t *testing.T) {
 		mockArticleRepo.On("Fetch", mock.Anything, mock.AnythingOfType("string"),
 			mock.AnythingOfType("int64")).Return(nil, "", errors.New("Unexpexted Error")).Once()
 
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 		num := int64(1)
 		cursor := "12"
@@ -65,7 +65,7 @@ func TestFetchArticle(t *testing.T) {
 }
 
 func TestGetByID(t *testing.T) {
-	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticleRepo := new(mocks.ArticleRepository)
 	mockArticle := entity.Article{
 		Title:   "Hello",
 		Content: "Content",
@@ -77,7 +77,7 @@ func TestGetByID(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockArticle, nil).Once()
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		mockAuthorrepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockAuthor, nil)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
@@ -92,7 +92,7 @@ func TestGetByID(t *testing.T) {
 	t.Run("error-failed", func(t *testing.T) {
 		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(entity.Article{}, errors.New("Unexpected")).Once()
 
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		a, err := u.GetByID(context.TODO(), mockArticle.ID)
@@ -106,7 +106,7 @@ func TestGetByID(t *testing.T) {
 }
 
 func TestStore(t *testing.T) {
-	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticleRepo := new(mocks.ArticleRepository)
 	mockArticle := entity.Article{
 		Title:   "Hello",
 		Content: "Content",
@@ -116,9 +116,9 @@ func TestStore(t *testing.T) {
 		tempMockArticle := mockArticle
 		tempMockArticle.ID = 0
 		mockArticleRepo.On("GetByTitle", mock.Anything, mock.AnythingOfType("string")).Return(entity.Article{}, internal.ErrNotFound).Once()
-		mockArticleRepo.On("Store", mock.Anything, mock.AnythingOfType("*domain.Article")).Return(nil).Once()
+		mockArticleRepo.On("Store", mock.Anything, mock.AnythingOfType("*entity.Article")).Return(nil).Once()
 
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Store(context.TODO(), &tempMockArticle)
@@ -134,7 +134,7 @@ func TestStore(t *testing.T) {
 			ID:   1,
 			Name: "Iman Tumorang",
 		}
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		mockAuthorrepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockAuthor, nil)
 
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
@@ -148,7 +148,7 @@ func TestStore(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticleRepo := new(mocks.ArticleRepository)
 	mockArticle := entity.Article{
 		Title:   "Hello",
 		Content: "Content",
@@ -159,7 +159,7 @@ func TestDelete(t *testing.T) {
 
 		mockArticleRepo.On("Delete", mock.Anything, mock.AnythingOfType("int64")).Return(nil).Once()
 
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Delete(context.TODO(), mockArticle.ID)
@@ -171,7 +171,7 @@ func TestDelete(t *testing.T) {
 	t.Run("article-is-not-exist", func(t *testing.T) {
 		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(entity.Article{}, nil).Once()
 
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Delete(context.TODO(), mockArticle.ID)
@@ -183,7 +183,7 @@ func TestDelete(t *testing.T) {
 	t.Run("error-happens-in-db", func(t *testing.T) {
 		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(entity.Article{}, errors.New("Unexpected Error")).Once()
 
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Delete(context.TODO(), mockArticle.ID)
@@ -195,7 +195,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticleRepo := new(mocks.ArticleRepository)
 	mockArticle := entity.Article{
 		Title:   "Hello",
 		Content: "Content",
@@ -205,7 +205,7 @@ func TestUpdate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockArticleRepo.On("Update", mock.Anything, &mockArticle).Once().Return(nil)
 
-		mockAuthorrepo := new(mocks2.AuthorRepository)
+		mockAuthorrepo := new(mocks.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Update(context.TODO(), &mockArticle)

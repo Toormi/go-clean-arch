@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/bxcodec/go-clean-arch/domain/entity"
+	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
 	"github.com/bxcodec/go-clean-arch/internal"
 	"github.com/bxcodec/go-clean-arch/internal/application"
 	"net/http"

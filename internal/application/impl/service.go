@@ -2,9 +2,9 @@ package impl
 
 import (
 	"context"
-	"github.com/bxcodec/go-clean-arch/domain/entity"
+	entity2 "github.com/bxcodec/go-clean-arch/domain/domain/entity"
+	repository2 "github.com/bxcodec/go-clean-arch/domain/repository"
 	"github.com/bxcodec/go-clean-arch/internal"
-	"github.com/bxcodec/go-clean-arch/internal/repository"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -12,12 +12,12 @@ import (
 )
 
 type Service struct {
-	articleRepo repository.ArticleRepository
-	authorRepo  repository.AuthorRepository
+	articleRepo repository2.ArticleRepository
+	authorRepo  repository2.AuthorRepository
 }
 
 // NewService will create a new article service object
-func NewService(a repository.ArticleRepository, ar repository.AuthorRepository) *Service {
+func NewService(a repository2.ArticleRepository, ar repository2.AuthorRepository) *Service {
 	return &Service{
 		articleRepo: a,
 		authorRepo:  ar,
@@ -29,16 +29,16 @@ func NewService(a repository.ArticleRepository, ar repository.AuthorRepository) 
 * Look how this works in this package explanation
 * in godoc: https://godoc.org/golang.org/x/sync/errgroup#ex-Group--Pipeline
  */
-func (a *Service) fillAuthorDetails(ctx context.Context, data []entity.Article) ([]entity.Article, error) {
+func (a *Service) fillAuthorDetails(ctx context.Context, data []entity2.Article) ([]entity2.Article, error) {
 	g, ctx := errgroup.WithContext(ctx)
 	// Get the author's id
-	mapAuthors := map[int64]entity.Author{}
+	mapAuthors := map[int64]entity2.Author{}
 
 	for _, article := range data { //nolint
-		mapAuthors[article.Author.ID] = entity.Author{}
+		mapAuthors[article.Author.ID] = entity2.Author{}
 	}
 	// Using goroutine to fetch the author's detail
-	chanAuthor := make(chan entity.Author)
+	chanAuthor := make(chan entity2.Author)
 	for authorID := range mapAuthors {
 		authorID := authorID
 		g.Go(func() error {
@@ -62,7 +62,7 @@ func (a *Service) fillAuthorDetails(ctx context.Context, data []entity.Article) 
 	}()
 
 	for author := range chanAuthor {
-		if author != (entity.Author{}) {
+		if author != (entity2.Author{}) {
 			mapAuthors[author.ID] = author
 		}
 	}
@@ -80,7 +80,7 @@ func (a *Service) fillAuthorDetails(ctx context.Context, data []entity.Article) 
 	return data, nil
 }
 
-func (a *Service) Fetch(ctx context.Context, cursor string, num int64) (res []entity.Article, nextCursor string, err error) {
+func (a *Service) Fetch(ctx context.Context, cursor string, num int64) (res []entity2.Article, nextCursor string, err error) {
 	res, nextCursor, err = a.articleRepo.Fetch(ctx, cursor, num)
 	if err != nil {
 		return nil, "", err
@@ -93,7 +93,7 @@ func (a *Service) Fetch(ctx context.Context, cursor string, num int64) (res []en
 	return
 }
 
-func (a *Service) GetByID(ctx context.Context, id int64) (res entity.Article, err error) {
+func (a *Service) GetByID(ctx context.Context, id int64) (res entity2.Article, err error) {
 	res, err = a.articleRepo.GetByID(ctx, id)
 	if err != nil {
 		return
@@ -101,18 +101,18 @@ func (a *Service) GetByID(ctx context.Context, id int64) (res entity.Article, er
 
 	resAuthor, err := a.authorRepo.GetByID(ctx, res.Author.ID)
 	if err != nil {
-		return entity.Article{}, err
+		return entity2.Article{}, err
 	}
 	res.Author = resAuthor
 	return
 }
 
-func (a *Service) Update(ctx context.Context, ar *entity.Article) (err error) {
+func (a *Service) Update(ctx context.Context, ar *entity2.Article) (err error) {
 	ar.UpdatedAt = time.Now()
 	return a.articleRepo.Update(ctx, ar)
 }
 
-func (a *Service) GetByTitle(ctx context.Context, title string) (res entity.Article, err error) {
+func (a *Service) GetByTitle(ctx context.Context, title string) (res entity2.Article, err error) {
 	res, err = a.articleRepo.GetByTitle(ctx, title)
 	if err != nil {
 		return
@@ -120,16 +120,16 @@ func (a *Service) GetByTitle(ctx context.Context, title string) (res entity.Arti
 
 	resAuthor, err := a.authorRepo.GetByID(ctx, res.Author.ID)
 	if err != nil {
-		return entity.Article{}, err
+		return entity2.Article{}, err
 	}
 
 	res.Author = resAuthor
 	return
 }
 
-func (a *Service) Store(ctx context.Context, m *entity.Article) (err error) {
+func (a *Service) Store(ctx context.Context, m *entity2.Article) (err error) {
 	existedArticle, _ := a.GetByTitle(ctx, m.Title) // ignore if any error
-	if existedArticle != (entity.Article{}) {
+	if existedArticle != (entity2.Article{}) {
 		return internal.ErrConflict
 	}
 
@@ -142,7 +142,7 @@ func (a *Service) Delete(ctx context.Context, id int64) (err error) {
 	if err != nil {
 		return
 	}
-	if existedArticle == (entity.Article{}) {
+	if existedArticle == (entity2.Article{}) {
 		return internal.ErrNotFound
 	}
 	return a.articleRepo.Delete(ctx, id)

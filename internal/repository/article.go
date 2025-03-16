@@ -2,17 +2,181 @@ package repository
 
 import (
 	"context"
-	"github.com/bxcodec/go-clean-arch/domain/entity"
+	"database/sql"
+	"fmt"
+	entity2 "github.com/bxcodec/go-clean-arch/domain/domain/entity"
+	"github.com/bxcodec/go-clean-arch/internal"
+	"github.com/sirupsen/logrus"
 )
 
-// ArticleRepository represent the article's repository contract
-//
-//go:generate mockery --name ArticleRepository
-type ArticleRepository interface {
-	Fetch(ctx context.Context, cursor string, num int64) (res []entity.Article, nextCursor string, err error)
-	GetByID(ctx context.Context, id int64) (entity.Article, error)
-	GetByTitle(ctx context.Context, title string) (entity.Article, error)
-	Update(ctx context.Context, ar *entity.Article) error
-	Store(ctx context.Context, a *entity.Article) error
-	Delete(ctx context.Context, id int64) error
+type ArticleRepository struct {
+	Conn *sql.DB
+}
+
+// NewArticleRepository will create an object that represent the article.Repository interface
+func NewArticleRepository(conn *sql.DB) *ArticleRepository {
+	return &ArticleRepository{conn}
+}
+
+func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...interface{}) (result []entity2.Article, err error) {
+	rows, err := m.Conn.QueryContext(ctx, query, args...)
+	if err != nil {
+		logrus.Error(err)
+		return nil, err
+	}
+
+	defer func() {
+		errRow := rows.Close()
+		if errRow != nil {
+			logrus.Error(errRow)
+		}
+	}()
+
+	result = make([]entity2.Article, 0)
+	for rows.Next() {
+		t := entity2.Article{}
+		authorID := int64(0)
+		err = rows.Scan(
+			&t.ID,
+			&t.Title,
+			&t.Content,
+			&authorID,
+			&t.UpdatedAt,
+			&t.CreatedAt,
+		)
+
+		if err != nil {
+			logrus.Error(err)
+			return nil, err
+		}
+		t.Author = entity2.Author{
+			ID: authorID,
+		}
+		result = append(result, t)
+	}
+
+	return result, nil
+}
+
+func (m *ArticleRepository) Fetch(ctx context.Context, cursor string, num int64) (res []entity2.Article, nextCursor string, err error) {
+	query := `SELECT id,title,content, author_id, updated_at, created_at
+  						FROM article WHERE created_at > ? ORDER BY created_at LIMIT ? `
+
+	decodedCursor, err := DecodeCursor(cursor)
+	if err != nil && cursor != "" {
+		return nil, "", internal.ErrBadParamInput
+	}
+
+	res, err = m.fetch(ctx, query, decodedCursor, num)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if len(res) == int(num) {
+		nextCursor = EncodeCursor(res[len(res)-1].CreatedAt)
+	}
+
+	return
+}
+func (m *ArticleRepository) GetByID(ctx context.Context, id int64) (res entity2.Article, err error) {
+	query := `SELECT id,title,content, author_id, updated_at, created_at
+  						FROM article WHERE ID = ?`
+
+	list, err := m.fetch(ctx, query, id)
+	if err != nil {
+		return entity2.Article{}, err
+	}
+
+	if len(list) > 0 {
+		res = list[0]
+	} else {
+		return res, internal.ErrNotFound
+	}
+
+	return
+}
+
+func (m *ArticleRepository) GetByTitle(ctx context.Context, title string) (res entity2.Article, err error) {
+	query := `SELECT id,title,content, author_id, updated_at, created_at
+  						FROM article WHERE title = ?`
+
+	list, err := m.fetch(ctx, query, title)
+	if err != nil {
+		return
+	}
+
+	if len(list) > 0 {
+		res = list[0]
+	} else {
+		return res, internal.ErrNotFound
+	}
+	return
+}
+
+func (m *ArticleRepository) Store(ctx context.Context, a *entity2.Article) (err error) {
+	query := `INSERT  article SET title=? , content=? , author_id=?, updated_at=? , created_at=?`
+	stmt, err := m.Conn.PrepareContext(ctx, query)
+	if err != nil {
+		return
+	}
+
+	res, err := stmt.ExecContext(ctx, a.Title, a.Content, a.Author.ID, a.UpdatedAt, a.CreatedAt)
+	if err != nil {
+		return
+	}
+	lastID, err := res.LastInsertId()
+	if err != nil {
+		return
+	}
+	a.ID = lastID
+	return
+}
+
+func (m *ArticleRepository) Delete(ctx context.Context, id int64) (err error) {
+	query := "DELETE FROM article WHERE id = ?"
+
+	stmt, err := m.Conn.PrepareContext(ctx, query)
+	if err != nil {
+		return
+	}
+
+	res, err := stmt.ExecContext(ctx, id)
+	if err != nil {
+		return
+	}
+
+	rowsAfected, err := res.RowsAffected()
+	if err != nil {
+		return
+	}
+
+	if rowsAfected != 1 {
+		err = fmt.Errorf("weird  Behavior. Total Affected: %d", rowsAfected)
+		return
+	}
+
+	return
+}
+func (m *ArticleRepository) Update(ctx context.Context, ar *entity2.Article) (err error) {
+	query := `UPDATE article set title=?, content=?, author_id=?, updated_at=? WHERE ID = ?`
+
+	stmt, err := m.Conn.PrepareContext(ctx, query)
+	if err != nil {
+		return
+	}
+
+	res, err := stmt.ExecContext(ctx, ar.Title, ar.Content, ar.Author.ID, ar.UpdatedAt, ar.ID)
+	if err != nil {
+		return
+	}
+	affect, err := res.RowsAffected()
+	if err != nil {
+		return
+	}
+	if affect != 1 {
+		err = fmt.Errorf("weird  Behavior. Total Affected: %d", affect)
+		return
+	}
+
+	return
 }

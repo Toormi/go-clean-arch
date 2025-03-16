@@ -2,7 +2,7 @@ package application
 
 import (
 	"context"
-	"github.com/bxcodec/go-clean-arch/domain/entity"
+	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
 )
 
 // ArticleService represent the article's usecases

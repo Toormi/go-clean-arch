@@ -1,14 +1,13 @@
-package impl_test
+package repository_test
 
 import (
 	"context"
+	"github.com/bxcodec/go-clean-arch/internal/repository"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	sqlmock "gopkg.in/DATA-DOG/go-sqlmock.v1"
-
-	repository "github.com/bxcodec/go-clean-arch/internal/repository/impl"
 )
 
 func TestGetAuthorByID(t *testing.T) {

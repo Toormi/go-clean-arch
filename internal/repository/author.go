@@ -2,12 +2,39 @@ package repository
 
 import (
 	"context"
-	"github.com/bxcodec/go-clean-arch/domain/entity"
+	"database/sql"
+	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
 )
 
-// AuthorRepository represent the author's repository contract
-//
-//go:generate mockery --name AuthorRepository
-type AuthorRepository interface {
-	GetByID(ctx context.Context, id int64) (entity.Author, error)
+type AuthorRepository struct {
+	DB *sql.DB
+}
+
+// NewAuthorRepository will create an implementation of author.Repository
+func NewAuthorRepository(db *sql.DB) *AuthorRepository {
+	return &AuthorRepository{
+		DB: db,
+	}
+}
+
+func (m *AuthorRepository) getOne(ctx context.Context, query string, args ...interface{}) (res entity.Author, err error) {
+	stmt, err := m.DB.PrepareContext(ctx, query)
+	if err != nil {
+		return entity.Author{}, err
+	}
+	row := stmt.QueryRowContext(ctx, args...)
+	res = entity.Author{}
+
+	err = row.Scan(
+		&res.ID,
+		&res.Name,
+		&res.CreatedAt,
+		&res.UpdatedAt,
+	)
+	return
+}
+
+func (m *AuthorRepository) GetByID(ctx context.Context, id int64) (entity.Author, error) {
+	query := `SELECT id, name, created_at, updated_at FROM author WHERE id=?`
+	return m.getOne(ctx, query, id)
 }

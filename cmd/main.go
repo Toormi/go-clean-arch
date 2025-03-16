@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bxcodec/go-clean-arch/internal/application/impl"
+	"github.com/bxcodec/go-clean-arch/internal/repository"
 	"log"
 	"net/url"
 	"os"
@@ -12,8 +13,6 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo/v4"
-
-	mysqlRepo "github.com/bxcodec/go-clean-arch/internal/repository/impl"
 
 	"github.com/bxcodec/go-clean-arch/internal/rest"
 	"github.com/bxcodec/go-clean-arch/internal/rest/middleware"
@@ -73,8 +72,8 @@ func main() {
 	e.Use(middleware.SetRequestContextWithTimeout(timeoutContext))
 
 	// Prepare Repository
-	authorRepo := mysqlRepo.NewAuthorRepository(dbConn)
-	articleRepo := mysqlRepo.NewArticleRepository(dbConn)
+	authorRepo := repository.NewAuthorRepository(dbConn)
+	articleRepo := repository.NewArticleRepository(dbConn)
 
 	// Build service Layer
 	svc := impl.NewService(articleRepo, authorRepo)

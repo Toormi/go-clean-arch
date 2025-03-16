@@ -3,7 +3,7 @@ package rest_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/bxcodec/go-clean-arch/domain/entity"
+	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
 	"github.com/bxcodec/go-clean-arch/internal"
 	"net/http"
 	"net/http/httptest"
@@ -12,14 +12,14 @@ import (
 	"testing"
 	"time"
 
-	faker "github.com/go-faker/faker/v4"
+	"github.com/go-faker/faker/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bxcodec/go-clean-arch/internal/application/mocks"
 	"github.com/bxcodec/go-clean-arch/internal/rest"
-	"github.com/bxcodec/go-clean-arch/internal/rest/mocks"
 )
 
 func TestFetch(t *testing.T) {
@@ -121,7 +121,7 @@ func TestStore(t *testing.T) {
 	j, err := json.Marshal(tempMockArticle)
 	assert.NoError(t, err)
 
-	mockUCase.On("Store", mock.Anything, mock.AnythingOfType("*domain.Article")).Return(nil)
+	mockUCase.On("Store", mock.Anything, mock.AnythingOfType("*entity.Article")).Return(nil)
 
 	e := echo.New()
 	req, err := http.NewRequestWithContext(context.TODO(), echo.POST, "/article", strings.NewReader(string(j)))
