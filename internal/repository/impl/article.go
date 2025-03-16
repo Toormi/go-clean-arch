@@ -1,13 +1,13 @@
-package mysql
+package impl
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-
+	"github.com/bxcodec/go-clean-arch/domain/entity"
+	"github.com/bxcodec/go-clean-arch/internal"
 	"github.com/sirupsen/logrus"
 
-	"github.com/bxcodec/go-clean-arch/domain"
 	"github.com/bxcodec/go-clean-arch/internal/repository"
 )
 
@@ -20,7 +20,7 @@ func NewArticleRepository(conn *sql.DB) *ArticleRepository {
 	return &ArticleRepository{conn}
 }
 
-func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...interface{}) (result []domain.Article, err error) {
+func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...interface{}) (result []entity.Article, err error) {
 	rows, err := m.Conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		logrus.Error(err)
@@ -34,9 +34,9 @@ func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...int
 		}
 	}()
 
-	result = make([]domain.Article, 0)
+	result = make([]entity.Article, 0)
 	for rows.Next() {
-		t := domain.Article{}
+		t := entity.Article{}
 		authorID := int64(0)
 		err = rows.Scan(
 			&t.ID,
@@ -51,7 +51,7 @@ func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...int
 			logrus.Error(err)
 			return nil, err
 		}
-		t.Author = domain.Author{
+		t.Author = entity.Author{
 			ID: authorID,
 		}
 		result = append(result, t)
@@ -60,13 +60,13 @@ func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...int
 	return result, nil
 }
 
-func (m *ArticleRepository) Fetch(ctx context.Context, cursor string, num int64) (res []domain.Article, nextCursor string, err error) {
+func (m *ArticleRepository) Fetch(ctx context.Context, cursor string, num int64) (res []entity.Article, nextCursor string, err error) {
 	query := `SELECT id,title,content, author_id, updated_at, created_at
   						FROM article WHERE created_at > ? ORDER BY created_at LIMIT ? `
 
 	decodedCursor, err := repository.DecodeCursor(cursor)
 	if err != nil && cursor != "" {
-		return nil, "", domain.ErrBadParamInput
+		return nil, "", internal.ErrBadParamInput
 	}
 
 	res, err = m.fetch(ctx, query, decodedCursor, num)
@@ -80,25 +80,25 @@ func (m *ArticleRepository) Fetch(ctx context.Context, cursor string, num int64)
 
 	return
 }
-func (m *ArticleRepository) GetByID(ctx context.Context, id int64) (res domain.Article, err error) {
+func (m *ArticleRepository) GetByID(ctx context.Context, id int64) (res entity.Article, err error) {
 	query := `SELECT id,title,content, author_id, updated_at, created_at
   						FROM article WHERE ID = ?`
 
 	list, err := m.fetch(ctx, query, id)
 	if err != nil {
-		return domain.Article{}, err
+		return entity.Article{}, err
 	}
 
 	if len(list) > 0 {
 		res = list[0]
 	} else {
-		return res, domain.ErrNotFound
+		return res, internal.ErrNotFound
 	}
 
 	return
 }
 
-func (m *ArticleRepository) GetByTitle(ctx context.Context, title string) (res domain.Article, err error) {
+func (m *ArticleRepository) GetByTitle(ctx context.Context, title string) (res entity.Article, err error) {
 	query := `SELECT id,title,content, author_id, updated_at, created_at
   						FROM article WHERE title = ?`
 
@@ -110,12 +110,12 @@ func (m *ArticleRepository) GetByTitle(ctx context.Context, title string) (res d
 	if len(list) > 0 {
 		res = list[0]
 	} else {
-		return res, domain.ErrNotFound
+		return res, internal.ErrNotFound
 	}
 	return
 }
 
-func (m *ArticleRepository) Store(ctx context.Context, a *domain.Article) (err error) {
+func (m *ArticleRepository) Store(ctx context.Context, a *entity.Article) (err error) {
 	query := `INSERT  article SET title=? , content=? , author_id=?, updated_at=? , created_at=?`
 	stmt, err := m.Conn.PrepareContext(ctx, query)
 	if err != nil {
@@ -159,7 +159,7 @@ func (m *ArticleRepository) Delete(ctx context.Context, id int64) (err error) {
 
 	return
 }
-func (m *ArticleRepository) Update(ctx context.Context, ar *domain.Article) (err error) {
+func (m *ArticleRepository) Update(ctx context.Context, ar *entity.Article) (err error) {
 	query := `UPDATE article set title=?, content=?, author_id=?, updated_at=? WHERE ID = ?`
 
 	stmt, err := m.Conn.PrepareContext(ctx, query)

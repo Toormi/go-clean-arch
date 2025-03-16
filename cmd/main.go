@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/bxcodec/go-clean-arch/internal/application/impl"
 	"log"
 	"net/url"
 	"os"
@@ -12,9 +13,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo/v4"
 
-	mysqlRepo "github.com/bxcodec/go-clean-arch/internal/repository/mysql"
+	mysqlRepo "github.com/bxcodec/go-clean-arch/internal/repository/impl"
 
-	"github.com/bxcodec/go-clean-arch/article"
 	"github.com/bxcodec/go-clean-arch/internal/rest"
 	"github.com/bxcodec/go-clean-arch/internal/rest/middleware"
 	"github.com/joho/godotenv"
@@ -77,7 +77,7 @@ func main() {
 	articleRepo := mysqlRepo.NewArticleRepository(dbConn)
 
 	// Build service Layer
-	svc := article.NewService(articleRepo, authorRepo)
+	svc := impl.NewService(articleRepo, authorRepo)
 	rest.NewArticleHandler(e, svc)
 
 	// Start Server

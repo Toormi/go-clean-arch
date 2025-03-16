@@ -1,15 +1,15 @@
 package rest
 
 import (
-	"context"
+	"github.com/bxcodec/go-clean-arch/domain/entity"
+	"github.com/bxcodec/go-clean-arch/internal"
+	"github.com/bxcodec/go-clean-arch/internal/application"
 	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
-	validator "gopkg.in/go-playground/validator.v9"
-
-	"github.com/bxcodec/go-clean-arch/domain"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // ResponseError represent the response error struct
@@ -17,27 +17,15 @@ type ResponseError struct {
 	Message string `json:"message"`
 }
 
-// ArticleService represent the article's usecases
-//
-//go:generate mockery --name ArticleService
-type ArticleService interface {
-	Fetch(ctx context.Context, cursor string, num int64) ([]domain.Article, string, error)
-	GetByID(ctx context.Context, id int64) (domain.Article, error)
-	Update(ctx context.Context, ar *domain.Article) error
-	GetByTitle(ctx context.Context, title string) (domain.Article, error)
-	Store(context.Context, *domain.Article) error
-	Delete(ctx context.Context, id int64) error
-}
-
 // ArticleHandler  represent the httphandler for article
 type ArticleHandler struct {
-	Service ArticleService
+	Service application.ArticleService
 }
 
 const defaultNum = 10
 
 // NewArticleHandler will initialize the articles/ resources endpoint
-func NewArticleHandler(e *echo.Echo, svc ArticleService) {
+func NewArticleHandler(e *echo.Echo, svc application.ArticleService) {
 	handler := &ArticleHandler{
 		Service: svc,
 	}
@@ -72,7 +60,7 @@ func (a *ArticleHandler) FetchArticle(c echo.Context) error {
 func (a *ArticleHandler) GetByID(c echo.Context) error {
 	idP, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, domain.ErrNotFound.Error())
+		return c.JSON(http.StatusNotFound, internal.ErrNotFound.Error())
 	}
 
 	id := int64(idP)
@@ -86,7 +74,7 @@ func (a *ArticleHandler) GetByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, art)
 }
 
-func isRequestValid(m *domain.Article) (bool, error) {
+func isRequestValid(m *entity.Article) (bool, error) {
 	validate := validator.New()
 	err := validate.Struct(m)
 	if err != nil {
@@ -97,7 +85,7 @@ func isRequestValid(m *domain.Article) (bool, error) {
 
 // Store will store the article by given request body
 func (a *ArticleHandler) Store(c echo.Context) (err error) {
-	var article domain.Article
+	var article entity.Article
 	err = c.Bind(&article)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err.Error())
@@ -121,7 +109,7 @@ func (a *ArticleHandler) Store(c echo.Context) (err error) {
 func (a *ArticleHandler) Delete(c echo.Context) error {
 	idP, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, domain.ErrNotFound.Error())
+		return c.JSON(http.StatusNotFound, internal.ErrNotFound.Error())
 	}
 
 	id := int64(idP)
@@ -142,11 +130,11 @@ func getStatusCode(err error) int {
 
 	logrus.Error(err)
 	switch err {
-	case domain.ErrInternalServerError:
+	case internal.ErrInternalServerError:
 		return http.StatusInternalServerError
-	case domain.ErrNotFound:
+	case internal.ErrNotFound:
 		return http.StatusNotFound
-	case domain.ErrConflict:
+	case internal.ErrConflict:
 		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError

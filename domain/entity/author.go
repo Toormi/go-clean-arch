@@ -1,4 +1,4 @@
-package domain
+package entity
 
 // Author representing the Author data struct
 type Author struct {
