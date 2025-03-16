@@ -1,4 +1,4 @@
-package repository_impl
+package dao
 
 import (
 	"encoding/base64"

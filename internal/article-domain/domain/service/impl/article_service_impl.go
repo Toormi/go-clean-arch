@@ -2,8 +2,8 @@ package impl
 
 import (
 	"context"
+	"github.com/toormi/go-clean-arch/internal/article-domain/domain/entity"
 	repository2 "github.com/toormi/go-clean-arch/internal/article-domain/repository"
-	persistence2 "github.com/toormi/go-clean-arch/internal/article-persistence/persistence"
 	"github.com/toormi/go-clean-arch/internal/server"
 	"time"
 
@@ -29,16 +29,16 @@ func NewService(a repository2.ArticleRepository, ar repository2.AuthorRepository
 * Look how this works in this package explanation
 * in godoc: https://godoc.org/golang.org/x/sync/errgroup#ex-Group--Pipeline
  */
-func (a *Service) fillAuthorDetails(ctx context.Context, data []persistence2.Article) ([]persistence2.Article, error) {
+func (a *Service) fillAuthorDetails(ctx context.Context, data []entity.Article) ([]entity.Article, error) {
 	g, ctx := errgroup.WithContext(ctx)
 	// Get the author's id
-	mapAuthors := map[int64]persistence2.Author{}
+	mapAuthors := map[int64]entity.Author{}
 
 	for _, article := range data { //nolint
-		mapAuthors[article.Author.ID] = persistence2.Author{}
+		mapAuthors[article.Author.ID] = entity.Author{}
 	}
 	// Using goroutine to fetch the author's detail
-	chanAuthor := make(chan persistence2.Author)
+	chanAuthor := make(chan entity.Author)
 	for authorID := range mapAuthors {
 		authorID := authorID
 		g.Go(func() error {
@@ -62,7 +62,7 @@ func (a *Service) fillAuthorDetails(ctx context.Context, data []persistence2.Art
 	}()
 
 	for author := range chanAuthor {
-		if author != (persistence2.Author{}) {
+		if author != (entity.Author{}) {
 			mapAuthors[author.ID] = author
 		}
 	}
@@ -80,7 +80,7 @@ func (a *Service) fillAuthorDetails(ctx context.Context, data []persistence2.Art
 	return data, nil
 }
 
-func (a *Service) Fetch(ctx context.Context, cursor string, num int64) (res []persistence2.Article, nextCursor string, err error) {
+func (a *Service) Fetch(ctx context.Context, cursor string, num int64) (res []entity.Article, nextCursor string, err error) {
 	res, nextCursor, err = a.articleRepo.Fetch(ctx, cursor, num)
 	if err != nil {
 		return nil, "", err
@@ -93,7 +93,7 @@ func (a *Service) Fetch(ctx context.Context, cursor string, num int64) (res []pe
 	return
 }
 
-func (a *Service) GetByID(ctx context.Context, id int64) (res persistence2.Article, err error) {
+func (a *Service) GetByID(ctx context.Context, id int64) (res entity.Article, err error) {
 	res, err = a.articleRepo.GetByID(ctx, id)
 	if err != nil {
 		return
@@ -101,18 +101,18 @@ func (a *Service) GetByID(ctx context.Context, id int64) (res persistence2.Artic
 
 	resAuthor, err := a.authorRepo.GetByID(ctx, res.Author.ID)
 	if err != nil {
-		return persistence2.Article{}, err
+		return entity.Article{}, err
 	}
 	res.Author = resAuthor
 	return
 }
 
-func (a *Service) Update(ctx context.Context, ar *persistence2.Article) (err error) {
+func (a *Service) Update(ctx context.Context, ar *entity.Article) (err error) {
 	ar.UpdatedAt = time.Now()
 	return a.articleRepo.Update(ctx, ar)
 }
 
-func (a *Service) GetByTitle(ctx context.Context, title string) (res persistence2.Article, err error) {
+func (a *Service) GetByTitle(ctx context.Context, title string) (res entity.Article, err error) {
 	res, err = a.articleRepo.GetByTitle(ctx, title)
 	if err != nil {
 		return
@@ -120,16 +120,16 @@ func (a *Service) GetByTitle(ctx context.Context, title string) (res persistence
 
 	resAuthor, err := a.authorRepo.GetByID(ctx, res.Author.ID)
 	if err != nil {
-		return persistence2.Article{}, err
+		return entity.Article{}, err
 	}
 
 	res.Author = resAuthor
 	return
 }
 
-func (a *Service) Store(ctx context.Context, m *persistence2.Article) (err error) {
+func (a *Service) Store(ctx context.Context, m *entity.Article) (err error) {
 	existedArticle, _ := a.GetByTitle(ctx, m.Title) // ignore if any error
-	if existedArticle != (persistence2.Article{}) {
+	if existedArticle != (entity.Article{}) {
 		return server.ErrConflict
 	}
 
@@ -142,7 +142,7 @@ func (a *Service) Delete(ctx context.Context, id int64) (err error) {
 	if err != nil {
 		return
 	}
-	if existedArticle == (persistence2.Article{}) {
+	if existedArticle == (entity.Article{}) {
 		return server.ErrNotFound
 	}
 	return a.articleRepo.Delete(ctx, id)

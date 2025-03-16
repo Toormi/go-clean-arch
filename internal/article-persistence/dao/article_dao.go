@@ -1,24 +1,24 @@
-package repository_impl
+package dao
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	persistence2 "github.com/toormi/go-clean-arch/internal/article-persistence/persistence"
+	"github.com/toormi/go-clean-arch/internal/article-persistence/persistence"
 	"github.com/toormi/go-clean-arch/internal/server"
 )
 
-type ArticleRepository struct {
+type ArticleDAO struct {
 	Conn *sql.DB
 }
 
-// NewArticleRepository will create an object that represent the article.Repository interface
-func NewArticleRepository(conn *sql.DB) *ArticleRepository {
-	return &ArticleRepository{conn}
+// NewArticleDAO will create an object that represent the article.Repository interface
+func NewArticleDAO(conn *sql.DB) *ArticleDAO {
+	return &ArticleDAO{conn}
 }
 
-func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...interface{}) (result []persistence2.Article, err error) {
+func (m *ArticleDAO) fetch(ctx context.Context, query string, args ...interface{}) (result []persistence.Article, err error) {
 	rows, err := m.Conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		logrus.Error(err)
@@ -32,9 +32,9 @@ func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...int
 		}
 	}()
 
-	result = make([]persistence2.Article, 0)
+	result = make([]persistence.Article, 0)
 	for rows.Next() {
-		t := persistence2.Article{}
+		t := persistence.Article{}
 		authorID := int64(0)
 		err = rows.Scan(
 			&t.ID,
@@ -49,7 +49,7 @@ func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...int
 			logrus.Error(err)
 			return nil, err
 		}
-		t.Author = persistence2.Author{
+		t.Author = persistence.Author{
 			ID: authorID,
 		}
 		result = append(result, t)
@@ -58,7 +58,7 @@ func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...int
 	return result, nil
 }
 
-func (m *ArticleRepository) Fetch(ctx context.Context, cursor string, num int64) (res []persistence2.Article, nextCursor string, err error) {
+func (m *ArticleDAO) Fetch(ctx context.Context, cursor string, num int64) (res []persistence.Article, nextCursor string, err error) {
 	query := `SELECT id,title,content, author_id, updated_at, created_at
   						FROM article WHERE created_at > ? ORDER BY created_at LIMIT ? `
 
@@ -78,13 +78,13 @@ func (m *ArticleRepository) Fetch(ctx context.Context, cursor string, num int64)
 
 	return
 }
-func (m *ArticleRepository) GetByID(ctx context.Context, id int64) (res persistence2.Article, err error) {
+func (m *ArticleDAO) GetByID(ctx context.Context, id int64) (res persistence.Article, err error) {
 	query := `SELECT id,title,content, author_id, updated_at, created_at
   						FROM article WHERE ID = ?`
 
 	list, err := m.fetch(ctx, query, id)
 	if err != nil {
-		return persistence2.Article{}, err
+		return persistence.Article{}, err
 	}
 
 	if len(list) > 0 {
@@ -96,7 +96,7 @@ func (m *ArticleRepository) GetByID(ctx context.Context, id int64) (res persiste
 	return
 }
 
-func (m *ArticleRepository) GetByTitle(ctx context.Context, title string) (res persistence2.Article, err error) {
+func (m *ArticleDAO) GetByTitle(ctx context.Context, title string) (res persistence.Article, err error) {
 	query := `SELECT id,title,content, author_id, updated_at, created_at
   						FROM article WHERE title = ?`
 
@@ -113,7 +113,7 @@ func (m *ArticleRepository) GetByTitle(ctx context.Context, title string) (res p
 	return
 }
 
-func (m *ArticleRepository) Store(ctx context.Context, a *persistence2.Article) (err error) {
+func (m *ArticleDAO) Store(ctx context.Context, a *persistence.Article) (err error) {
 	query := `INSERT  article SET title=? , content=? , author_id=?, updated_at=? , created_at=?`
 	stmt, err := m.Conn.PrepareContext(ctx, query)
 	if err != nil {
@@ -132,7 +132,7 @@ func (m *ArticleRepository) Store(ctx context.Context, a *persistence2.Article) 
 	return
 }
 
-func (m *ArticleRepository) Delete(ctx context.Context, id int64) (err error) {
+func (m *ArticleDAO) Delete(ctx context.Context, id int64) (err error) {
 	query := "DELETE FROM article WHERE id = ?"
 
 	stmt, err := m.Conn.PrepareContext(ctx, query)
@@ -157,7 +157,7 @@ func (m *ArticleRepository) Delete(ctx context.Context, id int64) (err error) {
 
 	return
 }
-func (m *ArticleRepository) Update(ctx context.Context, ar *persistence2.Article) (err error) {
+func (m *ArticleDAO) Update(ctx context.Context, ar *persistence.Article) (err error) {
 	query := `UPDATE article set title=?, content=?, author_id=?, updated_at=? WHERE ID = ?`
 
 	stmt, err := m.Conn.PrepareContext(ctx, query)

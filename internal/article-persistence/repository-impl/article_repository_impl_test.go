@@ -2,7 +2,8 @@ package repository_impl_test
 
 import (
 	"context"
-	persistence2 "github.com/toormi/go-clean-arch/internal/article-persistence/persistence"
+	"github.com/toormi/go-clean-arch/internal/article-domain/domain/entity"
+	"github.com/toormi/go-clean-arch/internal/article-persistence/dao"
 	"github.com/toormi/go-clean-arch/internal/article-persistence/repository-impl"
 	"testing"
 	"time"
@@ -17,14 +18,14 @@ func TestFetchArticle(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
-	mockArticles := []persistence2.Article{
+	mockArticles := []entity.Article{
 		{
 			ID: 1, Title: "title 1", Content: "content 1",
-			Author: persistence2.Author{ID: 1}, UpdatedAt: time.Now(), CreatedAt: time.Now(),
+			Author: entity.Author{ID: 1}, UpdatedAt: time.Now(), CreatedAt: time.Now(),
 		},
 		{
 			ID: 2, Title: "title 2", Content: "content 2",
-			Author: persistence2.Author{ID: 1}, UpdatedAt: time.Now(), CreatedAt: time.Now(),
+			Author: entity.Author{ID: 1}, UpdatedAt: time.Now(), CreatedAt: time.Now(),
 		},
 	}
 
@@ -37,8 +38,8 @@ func TestFetchArticle(t *testing.T) {
 	query := "SELECT id,title,content, author_id, updated_at, created_at FROM article WHERE created_at > \\? ORDER BY created_at LIMIT \\?"
 
 	mock.ExpectQuery(query).WillReturnRows(rows)
-	a := repository_impl.NewArticleRepository(db)
-	cursor := repository_impl.EncodeCursor(mockArticles[1].CreatedAt)
+	a := repository_impl.NewArticleRepositoryImpl(db)
+	cursor := dao.EncodeCursor(mockArticles[1].CreatedAt)
 	num := int64(2)
 	list, nextCursor, err := a.Fetch(context.TODO(), cursor, num)
 	assert.NotEmpty(t, nextCursor)
@@ -58,7 +59,7 @@ func TestGetArticleByID(t *testing.T) {
 	query := "SELECT id,title,content, author_id, updated_at, created_at FROM article WHERE ID = \\?"
 
 	mock.ExpectQuery(query).WillReturnRows(rows)
-	a := repository_impl.NewArticleRepository(db)
+	a := repository_impl.NewArticleRepositoryImpl(db)
 
 	num := int64(5)
 	anArticle, err := a.GetByID(context.TODO(), num)
@@ -68,12 +69,12 @@ func TestGetArticleByID(t *testing.T) {
 
 func TestStoreArticle(t *testing.T) {
 	now := time.Now()
-	ar := &persistence2.Article{
+	ar := &entity.Article{
 		Title:     "Judul",
 		Content:   "Content",
 		CreatedAt: now,
 		UpdatedAt: now,
-		Author: persistence2.Author{
+		Author: entity.Author{
 			ID:   1,
 			Name: "Iman Tumorang",
 		},
@@ -87,7 +88,7 @@ func TestStoreArticle(t *testing.T) {
 	prep := mock.ExpectPrepare(query)
 	prep.ExpectExec().WithArgs(ar.Title, ar.Content, ar.Author.ID, ar.CreatedAt, ar.UpdatedAt).WillReturnResult(sqlmock.NewResult(12, 1))
 
-	a := repository_impl.NewArticleRepository(db)
+	a := repository_impl.NewArticleRepositoryImpl(db)
 
 	err = a.Store(context.TODO(), ar)
 	assert.NoError(t, err)
@@ -106,7 +107,7 @@ func TestGetArticleByTitle(t *testing.T) {
 	query := "SELECT id,title,content, author_id, updated_at, created_at FROM article WHERE title = \\?"
 
 	mock.ExpectQuery(query).WillReturnRows(rows)
-	a := repository_impl.NewArticleRepository(db)
+	a := repository_impl.NewArticleRepositoryImpl(db)
 
 	title := "title 1"
 	anArticle, err := a.GetByTitle(context.TODO(), title)
@@ -125,7 +126,7 @@ func TestDeleteArticle(t *testing.T) {
 	prep := mock.ExpectPrepare(query)
 	prep.ExpectExec().WithArgs(12).WillReturnResult(sqlmock.NewResult(12, 1))
 
-	a := repository_impl.NewArticleRepository(db)
+	a := repository_impl.NewArticleRepositoryImpl(db)
 
 	num := int64(12)
 	err = a.Delete(context.TODO(), num)
@@ -134,13 +135,13 @@ func TestDeleteArticle(t *testing.T) {
 
 func TestUpdateArticle(t *testing.T) {
 	now := time.Now()
-	ar := &persistence2.Article{
+	ar := &entity.Article{
 		ID:        12,
 		Title:     "Judul",
 		Content:   "Content",
 		CreatedAt: now,
 		UpdatedAt: now,
-		Author: persistence2.Author{
+		Author: entity.Author{
 			ID:   1,
 			Name: "Iman Tumorang",
 		},
@@ -156,7 +157,7 @@ func TestUpdateArticle(t *testing.T) {
 	prep := mock.ExpectPrepare(query)
 	prep.ExpectExec().WithArgs(ar.Title, ar.Content, ar.Author.ID, ar.UpdatedAt, ar.ID).WillReturnResult(sqlmock.NewResult(12, 1))
 
-	a := repository_impl.NewArticleRepository(db)
+	a := repository_impl.NewArticleRepositoryImpl(db)
 
 	err = a.Update(context.TODO(), ar)
 	assert.NoError(t, err)

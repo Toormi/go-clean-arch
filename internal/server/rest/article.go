@@ -1,8 +1,8 @@
 package rest
 
 import (
+	"github.com/toormi/go-clean-arch/internal/article-domain/domain/entity"
 	"github.com/toormi/go-clean-arch/internal/article-domain/domain/service"
-	"github.com/toormi/go-clean-arch/internal/article-persistence/persistence"
 	"github.com/toormi/go-clean-arch/internal/server"
 	"net/http"
 	"strconv"
@@ -74,7 +74,7 @@ func (a *ArticleHandler) GetByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, art)
 }
 
-func isRequestValid(m *persistence.Article) (bool, error) {
+func isRequestValid(m *entity.Article) (bool, error) {
 	validate := validator.New()
 	err := validate.Struct(m)
 	if err != nil {
@@ -85,7 +85,7 @@ func isRequestValid(m *persistence.Article) (bool, error) {
 
 // Store will store the article by given request body
 func (a *ArticleHandler) Store(c echo.Context) (err error) {
-	var article persistence.Article
+	var article entity.Article
 	err = c.Bind(&article)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err.Error())

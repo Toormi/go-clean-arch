@@ -1,4 +1,4 @@
-package repository_impl
+package dao
 
 import (
 	"context"
@@ -6,18 +6,18 @@ import (
 	"github.com/toormi/go-clean-arch/internal/article-persistence/persistence"
 )
 
-type AuthorRepository struct {
+type AuthorDAO struct {
 	DB *sql.DB
 }
 
-// NewMysqlAuthorRepository will create an implementation of author.Repository
-func NewAuthorRepository(db *sql.DB) *AuthorRepository {
-	return &AuthorRepository{
+// NewAuthorDAO will create an implementation of author.Repository
+func NewAuthorDAO(db *sql.DB) *AuthorDAO {
+	return &AuthorDAO{
 		DB: db,
 	}
 }
 
-func (m *AuthorRepository) getOne(ctx context.Context, query string, args ...interface{}) (res persistence.Author, err error) {
+func (m *AuthorDAO) getOne(ctx context.Context, query string, args ...interface{}) (res persistence.Author, err error) {
 	stmt, err := m.DB.PrepareContext(ctx, query)
 	if err != nil {
 		return persistence.Author{}, err
@@ -34,7 +34,7 @@ func (m *AuthorRepository) getOne(ctx context.Context, query string, args ...int
 	return
 }
 
-func (m *AuthorRepository) GetByID(ctx context.Context, id int64) (persistence.Author, error) {
+func (m *AuthorDAO) GetByID(ctx context.Context, id int64) (persistence.Author, error) {
 	query := `SELECT id, name, created_at, updated_at FROM author WHERE id=?`
 	return m.getOne(ctx, query, id)
 }

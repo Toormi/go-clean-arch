@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/toormi/go-clean-arch/internal/article-domain/domain/service/impl"
-	repository_impl2 "github.com/toormi/go-clean-arch/internal/article-persistence/repository-impl"
+	repositoryimpl "github.com/toormi/go-clean-arch/internal/article-persistence/repository-impl"
 	"github.com/toormi/go-clean-arch/internal/server/rest"
-	middleware2 "github.com/toormi/go-clean-arch/internal/server/rest/middleware"
+	"github.com/toormi/go-clean-arch/internal/server/rest/middleware"
 	"log"
 	"net/url"
 	"os"
@@ -61,7 +61,7 @@ func main() {
 	// prepare echo
 
 	e := echo.New()
-	e.Use(middleware2.CORS)
+	e.Use(middleware.CORS)
 	timeoutStr := os.Getenv("CONTEXT_TIMEOUT")
 	timeout, err := strconv.Atoi(timeoutStr)
 	if err != nil {
@@ -69,11 +69,11 @@ func main() {
 		timeout = defaultTimeout
 	}
 	timeoutContext := time.Duration(timeout) * time.Second
-	e.Use(middleware2.SetRequestContextWithTimeout(timeoutContext))
+	e.Use(middleware.SetRequestContextWithTimeout(timeoutContext))
 
 	// Prepare Repository
-	authorRepo := repository_impl2.NewAuthorRepository(dbConn)
-	articleRepo := repository_impl2.NewArticleRepository(dbConn)
+	authorRepo := repositoryimpl.NewAuthorRepositoryImpl(dbConn)
+	articleRepo := repositoryimpl.NewArticleRepositoryImpl(dbConn)
 
 	// Build service Layer
 	svc := impl.NewService(articleRepo, authorRepo)
