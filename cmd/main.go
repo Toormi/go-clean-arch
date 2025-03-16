@@ -1,0 +1,88 @@
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"github.com/toormi/go-clean-arch/internal/article-domain/domain/service/impl"
+	repository_impl2 "github.com/toormi/go-clean-arch/internal/article-persistence/repository-impl"
+	"github.com/toormi/go-clean-arch/internal/server/rest"
+	middleware2 "github.com/toormi/go-clean-arch/internal/server/rest/middleware"
+	"log"
+	"net/url"
+	"os"
+	"strconv"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/labstack/echo/v4"
+
+	"github.com/joho/godotenv"
+)
+
+const (
+	defaultTimeout = 30
+	defaultAddress = ":9090"
+)
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
+func main() {
+	//prepare database
+	dbHost := os.Getenv("DATABASE_HOST")
+	dbPort := os.Getenv("DATABASE_PORT")
+	dbUser := os.Getenv("DATABASE_USER")
+	dbPass := os.Getenv("DATABASE_PASS")
+	dbName := os.Getenv("DATABASE_NAME")
+	connection := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
+	val := url.Values{}
+	val.Add("parseTime", "1")
+	val.Add("loc", "Asia/Jakarta")
+	dsn := fmt.Sprintf("%s?%s", connection, val.Encode())
+	dbConn, err := sql.Open(`mysql`, dsn)
+	if err != nil {
+		log.Fatal("failed to open connection to database", err)
+	}
+	err = dbConn.Ping()
+	if err != nil {
+		log.Fatal("failed to ping database ", err)
+	}
+
+	defer func() {
+		err := dbConn.Close()
+		if err != nil {
+			log.Fatal("got error when closing the DB connection", err)
+		}
+	}()
+	// prepare echo
+
+	e := echo.New()
+	e.Use(middleware2.CORS)
+	timeoutStr := os.Getenv("CONTEXT_TIMEOUT")
+	timeout, err := strconv.Atoi(timeoutStr)
+	if err != nil {
+		log.Println("failed to parse timeout, using default timeout")
+		timeout = defaultTimeout
+	}
+	timeoutContext := time.Duration(timeout) * time.Second
+	e.Use(middleware2.SetRequestContextWithTimeout(timeoutContext))
+
+	// Prepare Repository
+	authorRepo := repository_impl2.NewAuthorRepository(dbConn)
+	articleRepo := repository_impl2.NewArticleRepository(dbConn)
+
+	// Build service Layer
+	svc := impl.NewService(articleRepo, authorRepo)
+	rest.NewArticleHandler(e, svc)
+
+	// Start Server
+	address := os.Getenv("SERVER_ADDRESS")
+	if address == "" {
+		address = defaultAddress
+	}
+	log.Fatal(e.Start(address)) //nolint
+}
