@@ -1,9 +1,9 @@
 package rest
 
 import (
-	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
 	"github.com/bxcodec/go-clean-arch/internal"
-	"github.com/bxcodec/go-clean-arch/internal/application"
+	"github.com/bxcodec/go-clean-arch/internal/application/service"
+	"github.com/bxcodec/go-clean-arch/internal/domain/article/entity"
 	"net/http"
 	"strconv"
 
@@ -19,13 +19,13 @@ type ResponseError struct {
 
 // ArticleHandler  represent the httphandler for article
 type ArticleHandler struct {
-	Service application.ArticleService
+	Service service.ArticleService
 }
 
 const defaultNum = 10
 
 // NewArticleHandler will initialize the articles/ resources endpoint
-func NewArticleHandler(e *echo.Echo, svc application.ArticleService) {
+func NewArticleHandler(e *echo.Echo, svc service.ArticleService) {
 	handler := &ArticleHandler{
 		Service: svc,
 	}

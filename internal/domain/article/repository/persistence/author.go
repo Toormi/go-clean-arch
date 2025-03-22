@@ -1,9 +1,9 @@
-package repository
+package persistence
 
 import (
 	"context"
 	"database/sql"
-	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
+	"github.com/bxcodec/go-clean-arch/internal/domain/article/entity"
 )
 
 type AuthorRepository struct {

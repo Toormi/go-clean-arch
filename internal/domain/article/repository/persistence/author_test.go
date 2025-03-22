@@ -1,8 +1,8 @@
-package repository_test
+package persistence_test
 
 import (
 	"context"
-	"github.com/bxcodec/go-clean-arch/internal/repository"
+	"github.com/bxcodec/go-clean-arch/internal/domain/article/repository/persistence"
 	"testing"
 	"time"
 
@@ -25,7 +25,7 @@ func TestGetAuthorByID(t *testing.T) {
 	userID := int64(1)
 	prep.ExpectQuery().WithArgs(userID).WillReturnRows(rows)
 
-	a := repository.NewAuthorRepository(db)
+	a := persistence.NewAuthorRepository(db)
 
 	anArticle, err := a.GetByID(context.TODO(), userID)
 	assert.NoError(t, err)

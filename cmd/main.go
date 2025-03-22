@@ -3,8 +3,10 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/bxcodec/go-clean-arch/internal/application/impl"
-	"github.com/bxcodec/go-clean-arch/internal/repository"
+	"github.com/bxcodec/go-clean-arch/internal/application/service/impl"
+	"github.com/bxcodec/go-clean-arch/internal/domain/article/repository/persistence"
+	"github.com/bxcodec/go-clean-arch/internal/interfaces/rest"
+	middleware2 "github.com/bxcodec/go-clean-arch/internal/interfaces/rest/middleware"
 	"log"
 	"net/url"
 	"os"
@@ -14,8 +16,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo/v4"
 
-	"github.com/bxcodec/go-clean-arch/internal/rest"
-	"github.com/bxcodec/go-clean-arch/internal/rest/middleware"
 	"github.com/joho/godotenv"
 )
 
@@ -61,7 +61,7 @@ func main() {
 	// prepare echo
 
 	e := echo.New()
-	e.Use(middleware.CORS)
+	e.Use(middleware2.CORS)
 	timeoutStr := os.Getenv("CONTEXT_TIMEOUT")
 	timeout, err := strconv.Atoi(timeoutStr)
 	if err != nil {
@@ -69,11 +69,11 @@ func main() {
 		timeout = defaultTimeout
 	}
 	timeoutContext := time.Duration(timeout) * time.Second
-	e.Use(middleware.SetRequestContextWithTimeout(timeoutContext))
+	e.Use(middleware2.SetRequestContextWithTimeout(timeoutContext))
 
 	// Prepare Repository
-	authorRepo := repository.NewAuthorRepository(dbConn)
-	articleRepo := repository.NewArticleRepository(dbConn)
+	authorRepo := persistence.NewAuthorRepository(dbConn)
+	articleRepo := persistence.NewArticleRepository(dbConn)
 
 	// Build service Layer
 	svc := impl.NewService(articleRepo, authorRepo)

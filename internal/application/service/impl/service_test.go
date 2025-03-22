@@ -3,10 +3,10 @@ package impl_test
 import (
 	"context"
 	"errors"
-	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
-	"github.com/bxcodec/go-clean-arch/domain/repository/mocks"
 	"github.com/bxcodec/go-clean-arch/internal"
-	"github.com/bxcodec/go-clean-arch/internal/application/impl"
+	"github.com/bxcodec/go-clean-arch/internal/application/service/impl"
+	entity2 "github.com/bxcodec/go-clean-arch/internal/domain/article/entity"
+	mocks2 "github.com/bxcodec/go-clean-arch/internal/domain/article/repository/facade/mocks"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,23 +14,23 @@ import (
 )
 
 func TestFetchArticle(t *testing.T) {
-	mockArticleRepo := new(mocks.ArticleRepository)
-	mockArticle := entity.Article{
+	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticle := entity2.Article{
 		Title:   "Hello",
 		Content: "Content",
 	}
 
-	mockListArtilce := make([]entity.Article, 0)
+	mockListArtilce := make([]entity2.Article, 0)
 	mockListArtilce = append(mockListArtilce, mockArticle)
 
 	t.Run("success", func(t *testing.T) {
 		mockArticleRepo.On("Fetch", mock.Anything, mock.AnythingOfType("string"),
 			mock.AnythingOfType("int64")).Return(mockListArtilce, "next-cursor", nil).Once()
-		mockAuthor := entity.Author{
+		mockAuthor := entity2.Author{
 			ID:   1,
 			Name: "Iman Tumorang",
 		}
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		mockAuthorrepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockAuthor, nil)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 		num := int64(1)
@@ -50,7 +50,7 @@ func TestFetchArticle(t *testing.T) {
 		mockArticleRepo.On("Fetch", mock.Anything, mock.AnythingOfType("string"),
 			mock.AnythingOfType("int64")).Return(nil, "", errors.New("Unexpexted Error")).Once()
 
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 		num := int64(1)
 		cursor := "12"
@@ -65,19 +65,19 @@ func TestFetchArticle(t *testing.T) {
 }
 
 func TestGetByID(t *testing.T) {
-	mockArticleRepo := new(mocks.ArticleRepository)
-	mockArticle := entity.Article{
+	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticle := entity2.Article{
 		Title:   "Hello",
 		Content: "Content",
 	}
-	mockAuthor := entity.Author{
+	mockAuthor := entity2.Author{
 		ID:   1,
 		Name: "Iman Tumorang",
 	}
 
 	t.Run("success", func(t *testing.T) {
 		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockArticle, nil).Once()
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		mockAuthorrepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockAuthor, nil)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
@@ -90,15 +90,15 @@ func TestGetByID(t *testing.T) {
 		mockAuthorrepo.AssertExpectations(t)
 	})
 	t.Run("error-failed", func(t *testing.T) {
-		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(entity.Article{}, errors.New("Unexpected")).Once()
+		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(entity2.Article{}, errors.New("Unexpected")).Once()
 
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		a, err := u.GetByID(context.TODO(), mockArticle.ID)
 
 		assert.Error(t, err)
-		assert.Equal(t, entity.Article{}, a)
+		assert.Equal(t, entity2.Article{}, a)
 
 		mockArticleRepo.AssertExpectations(t)
 		mockAuthorrepo.AssertExpectations(t)
@@ -106,8 +106,8 @@ func TestGetByID(t *testing.T) {
 }
 
 func TestStore(t *testing.T) {
-	mockArticleRepo := new(mocks.ArticleRepository)
-	mockArticle := entity.Article{
+	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticle := entity2.Article{
 		Title:   "Hello",
 		Content: "Content",
 	}
@@ -115,10 +115,10 @@ func TestStore(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		tempMockArticle := mockArticle
 		tempMockArticle.ID = 0
-		mockArticleRepo.On("GetByTitle", mock.Anything, mock.AnythingOfType("string")).Return(entity.Article{}, internal.ErrNotFound).Once()
+		mockArticleRepo.On("GetByTitle", mock.Anything, mock.AnythingOfType("string")).Return(entity2.Article{}, internal.ErrNotFound).Once()
 		mockArticleRepo.On("Store", mock.Anything, mock.AnythingOfType("*entity.Article")).Return(nil).Once()
 
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Store(context.TODO(), &tempMockArticle)
@@ -130,11 +130,11 @@ func TestStore(t *testing.T) {
 	t.Run("existing-title", func(t *testing.T) {
 		existingArticle := mockArticle
 		mockArticleRepo.On("GetByTitle", mock.Anything, mock.AnythingOfType("string")).Return(existingArticle, nil).Once()
-		mockAuthor := entity.Author{
+		mockAuthor := entity2.Author{
 			ID:   1,
 			Name: "Iman Tumorang",
 		}
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		mockAuthorrepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockAuthor, nil)
 
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
@@ -148,8 +148,8 @@ func TestStore(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	mockArticleRepo := new(mocks.ArticleRepository)
-	mockArticle := entity.Article{
+	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticle := entity2.Article{
 		Title:   "Hello",
 		Content: "Content",
 	}
@@ -159,7 +159,7 @@ func TestDelete(t *testing.T) {
 
 		mockArticleRepo.On("Delete", mock.Anything, mock.AnythingOfType("int64")).Return(nil).Once()
 
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Delete(context.TODO(), mockArticle.ID)
@@ -169,9 +169,9 @@ func TestDelete(t *testing.T) {
 		mockAuthorrepo.AssertExpectations(t)
 	})
 	t.Run("article-is-not-exist", func(t *testing.T) {
-		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(entity.Article{}, nil).Once()
+		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(entity2.Article{}, nil).Once()
 
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Delete(context.TODO(), mockArticle.ID)
@@ -181,9 +181,9 @@ func TestDelete(t *testing.T) {
 		mockAuthorrepo.AssertExpectations(t)
 	})
 	t.Run("error-happens-in-db", func(t *testing.T) {
-		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(entity.Article{}, errors.New("Unexpected Error")).Once()
+		mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(entity2.Article{}, errors.New("Unexpected Error")).Once()
 
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Delete(context.TODO(), mockArticle.ID)
@@ -195,8 +195,8 @@ func TestDelete(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	mockArticleRepo := new(mocks.ArticleRepository)
-	mockArticle := entity.Article{
+	mockArticleRepo := new(mocks2.ArticleRepository)
+	mockArticle := entity2.Article{
 		Title:   "Hello",
 		Content: "Content",
 		ID:      23,
@@ -205,7 +205,7 @@ func TestUpdate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockArticleRepo.On("Update", mock.Anything, &mockArticle).Once().Return(nil)
 
-		mockAuthorrepo := new(mocks.AuthorRepository)
+		mockAuthorrepo := new(mocks2.AuthorRepository)
 		u := impl.NewService(mockArticleRepo, mockAuthorrepo)
 
 		err := u.Update(context.TODO(), &mockArticle)

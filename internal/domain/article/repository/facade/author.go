@@ -1,8 +1,8 @@
-package repository
+package facade
 
 import (
 	"context"
-	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
+	"github.com/bxcodec/go-clean-arch/internal/domain/article/entity"
 )
 
 // AuthorRepository represent the author's repository contract

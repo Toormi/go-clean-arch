@@ -3,8 +3,10 @@ package rest_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/bxcodec/go-clean-arch/domain/domain/entity"
 	"github.com/bxcodec/go-clean-arch/internal"
+	"github.com/bxcodec/go-clean-arch/internal/application/service/mocks"
+	"github.com/bxcodec/go-clean-arch/internal/domain/article/entity"
+	"github.com/bxcodec/go-clean-arch/internal/interfaces/rest"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -17,9 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	"github.com/bxcodec/go-clean-arch/internal/application/mocks"
-	"github.com/bxcodec/go-clean-arch/internal/rest"
 )
 
 func TestFetch(t *testing.T) {

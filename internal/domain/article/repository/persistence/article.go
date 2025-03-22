@@ -1,11 +1,11 @@
-package repository
+package persistence
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	entity2 "github.com/bxcodec/go-clean-arch/domain/domain/entity"
 	"github.com/bxcodec/go-clean-arch/internal"
+	"github.com/bxcodec/go-clean-arch/internal/domain/article/entity"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,7 +18,7 @@ func NewArticleRepository(conn *sql.DB) *ArticleRepository {
 	return &ArticleRepository{conn}
 }
 
-func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...interface{}) (result []entity2.Article, err error) {
+func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...interface{}) (result []entity.Article, err error) {
 	rows, err := m.Conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		logrus.Error(err)
@@ -32,9 +32,9 @@ func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...int
 		}
 	}()
 
-	result = make([]entity2.Article, 0)
+	result = make([]entity.Article, 0)
 	for rows.Next() {
-		t := entity2.Article{}
+		t := entity.Article{}
 		authorID := int64(0)
 		err = rows.Scan(
 			&t.ID,
@@ -49,7 +49,7 @@ func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...int
 			logrus.Error(err)
 			return nil, err
 		}
-		t.Author = entity2.Author{
+		t.Author = entity.Author{
 			ID: authorID,
 		}
 		result = append(result, t)
@@ -58,7 +58,7 @@ func (m *ArticleRepository) fetch(ctx context.Context, query string, args ...int
 	return result, nil
 }
 
-func (m *ArticleRepository) Fetch(ctx context.Context, cursor string, num int64) (res []entity2.Article, nextCursor string, err error) {
+func (m *ArticleRepository) Fetch(ctx context.Context, cursor string, num int64) (res []entity.Article, nextCursor string, err error) {
 	query := `SELECT id,title,content, author_id, updated_at, created_at
   						FROM article WHERE created_at > ? ORDER BY created_at LIMIT ? `
 
@@ -78,13 +78,13 @@ func (m *ArticleRepository) Fetch(ctx context.Context, cursor string, num int64)
 
 	return
 }
-func (m *ArticleRepository) GetByID(ctx context.Context, id int64) (res entity2.Article, err error) {
+func (m *ArticleRepository) GetByID(ctx context.Context, id int64) (res entity.Article, err error) {
 	query := `SELECT id,title,content, author_id, updated_at, created_at
   						FROM article WHERE ID = ?`
 
 	list, err := m.fetch(ctx, query, id)
 	if err != nil {
-		return entity2.Article{}, err
+		return entity.Article{}, err
 	}
 
 	if len(list) > 0 {
@@ -96,7 +96,7 @@ func (m *ArticleRepository) GetByID(ctx context.Context, id int64) (res entity2.
 	return
 }
 
-func (m *ArticleRepository) GetByTitle(ctx context.Context, title string) (res entity2.Article, err error) {
+func (m *ArticleRepository) GetByTitle(ctx context.Context, title string) (res entity.Article, err error) {
 	query := `SELECT id,title,content, author_id, updated_at, created_at
   						FROM article WHERE title = ?`
 
@@ -113,7 +113,7 @@ func (m *ArticleRepository) GetByTitle(ctx context.Context, title string) (res e
 	return
 }
 
-func (m *ArticleRepository) Store(ctx context.Context, a *entity2.Article) (err error) {
+func (m *ArticleRepository) Store(ctx context.Context, a *entity.Article) (err error) {
 	query := `INSERT  article SET title=? , content=? , author_id=?, updated_at=? , created_at=?`
 	stmt, err := m.Conn.PrepareContext(ctx, query)
 	if err != nil {
@@ -157,7 +157,7 @@ func (m *ArticleRepository) Delete(ctx context.Context, id int64) (err error) {
 
 	return
 }
-func (m *ArticleRepository) Update(ctx context.Context, ar *entity2.Article) (err error) {
+func (m *ArticleRepository) Update(ctx context.Context, ar *entity.Article) (err error) {
 	query := `UPDATE article set title=?, content=?, author_id=?, updated_at=? WHERE ID = ?`
 
 	stmt, err := m.Conn.PrepareContext(ctx, query)
